@@ -1,0 +1,518 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>登录 / Вход</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;600;700&family=ZCOOL+XiaoWei&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --墨色: #1a1a2e;
+    --金色: #e94560;
+    --浅金: #f5a623;
+    --纸白: #fdf6e3;
+    --淡米: #f0e6cc;
+    --文字: #2c2c2c;
+    --浅灰: #888;
+    --格线: rgba(233, 69, 96, 0.15);
+  }
+
+  *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Noto Serif SC', serif;
+    background: var(--纸白);
+    min-height: 100vh;
+    color: var(--文字);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    overflow-x: hidden;
+  }
+
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      repeating-linear-gradient(0deg, transparent, transparent 29px, var(--格线) 29px, var(--格线) 30px),
+      repeating-linear-gradient(90deg, transparent, transparent 29px, var(--格线) 29px, var(--格线) 30px);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .页面容器 {
+    position: relative;
+    z-index: 1;
+    width: 100%;
+    max-width: 900px;
+    padding: 40px 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 40px;
+  }
+
+  .顶部区域 {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+
+  .标题块 { display: flex; flex-direction: column; }
+
+  .主标题 {
+    font-family: 'ZCOOL XiaoWei', serif;
+    font-size: 48px;
+    color: var(--墨色);
+    letter-spacing: 4px;
+    line-height: 1;
+  }
+
+  .副标题 {
+    font-size: 12px;
+    color: var(--浅灰);
+    letter-spacing: 6px;
+    margin-top: 6px;
+    text-transform: uppercase;
+  }
+
+  .语言按钮 {
+    padding: 6px 14px;
+    border: 1px solid var(--墨色);
+    background: transparent;
+    color: var(--墨色);
+    font-family: 'Noto Serif SC', serif;
+    font-size: 12px;
+    letter-spacing: 1px;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .语言按钮:hover { background: var(--墨色); color: white; }
+
+  .登录主体 {
+    background: white;
+    border: 1px solid var(--淡米);
+    box-shadow: 8px 8px 0px var(--淡米), 16px 16px 0px rgba(233,69,96,0.08);
+    display: flex;
+    overflow: hidden;
+  }
+
+  .左侧面板 {
+    width: 260px;
+    flex-shrink: 0;
+    background: var(--墨色);
+    padding: 48px 36px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .左侧面板::before {
+    content: '';
+    position: absolute;
+    top: -50px; right: -50px;
+    width: 200px; height: 200px;
+    border: 36px solid rgba(233,69,96,0.15);
+    border-radius: 50%;
+  }
+  .左侧面板::after {
+    content: '';
+    position: absolute;
+    bottom: 20px; left: -40px;
+    width: 140px; height: 140px;
+    border: 24px solid rgba(245,166,35,0.12);
+    border-radius: 50%;
+  }
+
+  .左侧标题 {
+    font-family: 'ZCOOL XiaoWei', serif;
+    font-size: 32px;
+    color: white;
+    letter-spacing: 4px;
+    line-height: 1.3;
+    position: relative;
+    z-index: 1;
+  }
+  .左侧标题 em {
+    display: block;
+    font-style: normal;
+    color: var(--金色);
+    font-size: 14px;
+    letter-spacing: 2px;
+    margin-top: 8px;
+    font-family: 'Noto Serif SC', serif;
+  }
+
+  .功能列表 {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    position: relative;
+    z-index: 1;
+  }
+  .功能列表 li {
+    font-size: 12.5px;
+    color: rgba(255,255,255,0.6);
+    letter-spacing: 1px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .功能列表 li::before {
+    content: '✦';
+    color: var(--金色);
+    font-size: 10px;
+    flex-shrink: 0;
+  }
+
+  .左侧底部 {
+    font-size: 10px;
+    color: rgba(255,255,255,0.25);
+    letter-spacing: 2px;
+    position: relative;
+    z-index: 1;
+  }
+
+  .右侧区域 {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .标签栏 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    border-bottom: 2px solid var(--墨色);
+  }
+
+  .标签项 {
+    padding: 16px 8px;
+    text-align: center;
+    font-size: 13px;
+    letter-spacing: 3px;
+    color: var(--浅灰);
+    cursor: pointer;
+    border-right: 1px solid var(--淡米);
+    background: transparent;
+    border-top: none; border-bottom: none; border-left: none;
+    font-family: 'Noto Serif SC', serif;
+    transition: all 0.2s;
+  }
+  .标签项:last-child { border-right: none; }
+  .标签项.激活 {
+    color: var(--金色);
+    background: rgba(233,69,96,0.04);
+  }
+  .标签项:hover:not(.激活) { background: rgba(233,69,96,0.02); color: var(--文字); }
+
+  .表单区 {
+    padding: 36px 40px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    flex: 1;
+  }
+
+  .表单组 {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .表单标签 {
+    font-size: 11px;
+    letter-spacing: 3px;
+    color: var(--浅灰);
+    text-transform: uppercase;
+  }
+
+  .表单输入 {
+    width: 100%;
+    border: none;
+    border-bottom: 1px solid var(--淡米);
+    outline: none;
+    font-family: 'Noto Serif SC', serif;
+    font-size: 14px;
+    color: var(--文字);
+    background: transparent;
+    padding: 8px 0;
+    transition: border-color 0.2s;
+    letter-spacing: 1px;
+  }
+  .表单输入::placeholder { color: #ccc; }
+  .表单输入:focus { border-bottom-color: var(--金色); }
+
+  .提交按钮 {
+    padding: 12px 32px;
+    background: var(--金色);
+    color: white;
+    border: none;
+    font-family: 'Noto Serif SC', serif;
+    font-size: 13px;
+    cursor: pointer;
+    letter-spacing: 3px;
+    transition: all 0.2s;
+    align-self: flex-end;
+    margin-top: 4px;
+  }
+  .提交按钮:hover { background: var(--墨色); transform: translateX(2px); }
+
+  .辅助链接 {
+    font-size: 11px;
+    color: var(--浅灰);
+    letter-spacing: 1px;
+    cursor: pointer;
+    border: none;
+    background: none;
+    font-family: 'Noto Serif SC', serif;
+    padding: 0;
+    transition: color 0.2s;
+    text-align: left;
+  }
+  .辅助链接:hover { color: var(--金色); }
+
+  .分割线 {
+    display: flex; align-items: center; gap: 12px;
+    font-size: 11px; color: var(--浅灰); letter-spacing: 2px;
+  }
+  .分割线::before, .分割线::after {
+    content: ''; flex: 1; height: 1px; background: var(--淡米);
+  }
+
+  .用例说明栏 {
+    border-top: 2px solid var(--墨色);
+    padding-top: 20px;
+    display: flex; flex-wrap: wrap; gap: 10px;
+  }
+
+  .用例标签 {
+    padding: 5px 12px;
+    border: 1px solid var(--淡米);
+    background: white;
+    font-size: 11px; color: var(--浅灰);
+    letter-spacing: 1px;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .用例标签 .点 {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--金色);
+    flex-shrink: 0;
+  }
+</style>
+</head>
+<body>
+
+<div class="页面容器">
+  <div class="顶部区域">
+    <div class="标题块">
+      <div class="主标题" id="主标题">日程规划</div>
+      <div class="副标题" id="副标题">Schedule · Расписание</div>
+    </div>
+    <div>
+      <button class="语言按钮" id="语言按钮">
+        <span>🌐</span>
+        <span id="语言文字">Рус</span>
+      </button>
+    </div>
+  </div>
+
+  <div class="登录主体">
+    <div class="左侧面板">
+      <div class="左侧标题" id="左侧标题">
+        欢迎使用
+        <em id="左侧副文字">个人日程系统</em>
+      </div>
+      <ul class="功能列表" id="功能列表">
+        <li id="功能1">添加 · 编辑日程</li>
+        <li id="功能2">设置提醒通知</li>
+        <li id="功能3">查看月历视图</li>
+        <li id="功能4">中俄双语界面</li>
+      </ul>
+      <div class="左侧底部" id="左侧底部">© 2025 日程规划系统</div>
+    </div>
+
+    <div class="右侧区域">
+      <div class="标签栏">
+        <button class="标签项 激活" id="tab登录" onclick="切换表单('登录')">
+          <span id="tab登录文字">登　录</span>
+        </button>
+        <button class="标签项" id="tab注册" onclick="切换表单('注册')">
+          <span id="tab注册文字">注　册</span>
+        </button>
+      </div>
+
+      <div class="表单区" id="登录表单">
+        <div class="表单组">
+          <div class="表单标签" id="标签邮箱">用户名</div>
+          <input class="表单输入" id="输入邮箱" type="text" placeholder="输入用户名">
+        </div>
+        <div class="表单组">
+          <div class="表单标签" id="标签密码">密码</div>
+          <input class="表单输入" id="输入密码" type="password" placeholder="••••••••">
+        </div>
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+          <button class="辅助链接" id="忘记密码按钮">忘记密码？</button>
+          <button class="提交按钮" id="登录按钮">登　录　→</button>
+        </div>
+        <div class="分割线" id="分割线文字">— 或者 —</div>
+        <div style="text-align:center;">
+          <button class="辅助链接" id="跳转注册" onclick="切换表单('注册')">没有账号？立即注册</button>
+        </div>
+      </div>
+
+      <div class="表单区" id="注册表单" style="display:none;">
+        <div class="表单组">
+          <div class="表单标签" id="标签用户名">用户名</div>
+          <input class="表单输入" id="输入用户名" type="text" placeholder="您的用户名">
+        </div>
+        <div class="表单组">
+          <div class="表单标签" id="标签注册密码">密码</div>
+          <input class="表单输入" id="输入注册密码" type="password" placeholder="至少6位字符">
+        </div>
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-top:4px;">
+          <button class="辅助链接" id="跳转登录" onclick="切换表单('登录')">已有账号？返回登录</button>
+          <button class="提交按钮" id="注册按钮">注　册　→</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="用例说明栏" id="用例说明栏"></div>
+</div>
+
+<script>
+const 翻译 = {
+  zh: {
+    主标题: '日程规划',副标题: 'Schedule · Расписание',语言切换: 'Рус',
+    左侧标题: '欢迎使用',左侧副文字: '个人日程系统',
+    功能列表: ['添加 · 编辑日程','设置提醒通知','查看月历视图','中俄双语界面'],
+    左侧底部: '© 2025 日程规划系统',tab登录: '登　录',tab注册: '注　册',
+    标签邮箱: '用户名',标签密码: '密码',输入邮箱占位: '输入用户名',输入密码占位: '••••••••',
+    忘记密码: '忘记密码？',登录按钮: '登　录　→',分割线: '— 或者 —',跳转注册: '没有账号？立即注册',
+    标签用户名: '用户名',标签注册密码: '密码',输入用户名占位: '您的用户名',输入注册密码占位: '至少6位字符',
+    跳转登录: '已有账号？返回登录',注册按钮: '注　册　→',
+    用例标签列表: ['访客 → 注册账号','访客 → 授权登录','🔒 密码安全保护','🌐 中俄语言切换']
+  },
+  ru: {
+    主标题: 'Расписание',副标题: 'Schedule · 日程',语言切换: '中文',
+    左侧标题: 'Добро\nпожаловать',左侧副文字: 'Личный планировщик',
+    功能列表: ['Добавить / редактировать','Настроить напоминания','Просмотр календаря','Интерфейс на 2 языках'],
+    左侧底部: '© 2025 Планировщик',tab登录: 'Вход',tab注册: 'Регистрация',
+    标签邮箱: 'Логин',标签密码: 'Пароль',输入邮箱占位: 'Введите логин',输入密码占位: '••••••••',
+    忘记密码: 'Забыли пароль?',登录按钮: 'Войти →',分割线: '— или —',跳转注册: 'Нет аккаунта? Зарегистрироваться',
+    标签用户名: 'Логин',标签注册密码: 'Пароль',输入用户名占位: 'Ваш логин',输入注册密码占位: 'Минимум 6 символов',
+    跳转登录: 'Уже есть аккаунт? Войти',注册按钮: 'Зарегистрироваться →',
+    用例标签列表: ['Гость → Регистрация','Гость → Авторизация','🔒 Защита паролем','🌐 Смена языка']
+  }
+};
+
+let 当前语言 = localStorage.getItem('日程语言') || 'zh';
+function t(k){return 翻译[当前语言][k];}
+
+function 渲染用例说明栏(){
+  const 栏 = document.getElementById('用例说明栏');栏.innerHTML='';
+  t('用例标签列表').forEach(text=>{
+    const div=document.createElement('div');div.className='用例标签';
+    div.innerHTML=`<div class="点"></div><span>${text}</span>`;栏.appendChild(div);
+  });
+}
+
+function 更新语言界面(){
+  document.getElementById('主标题').textContent=t('主标题');
+  document.getElementById('副标题').textContent=t('副标题');
+  document.getElementById('语言文字').textContent=t('语言切换');
+  const 左侧标题元素=document.getElementById('左侧标题');
+  左侧标题元素.innerHTML=t('左侧标题').replace('\n','<br>')+`<em id="左侧副文字">${t('左侧副文字')}</em>`;
+  document.getElementById('左侧底部').textContent=t('左侧底部');
+  const 功能项=['功能1','功能2','功能3','功能4'];
+  t('功能列表').forEach((text,i)=>{const el=document.getElementById(功能项[i]);if(el)el.textContent=text;});
+  document.getElementById('tab登录文字').textContent=t('tab登录');
+  document.getElementById('tab注册文字').textContent=t('tab注册');
+  document.getElementById('标签邮箱').textContent=t('标签邮箱');
+  document.getElementById('标签密码').textContent=t('标签密码');
+  document.getElementById('输入邮箱').placeholder=t('输入邮箱占位');
+  document.getElementById('输入密码').placeholder=t('输入密码占位');
+  document.getElementById('忘记密码按钮').textContent=t('忘记密码');
+  document.getElementById('登录按钮').textContent=t('登录按钮');
+  document.getElementById('分割线文字').textContent=t('分割线');
+  document.getElementById('跳转注册').textContent=t('跳转注册');
+  document.getElementById('标签用户名').textContent=t('标签用户名');
+  document.getElementById('标签注册密码').textContent=t('标签注册密码');
+  document.getElementById('输入用户名').placeholder=t('输入用户名占位');
+  document.getElementById('输入注册密码').placeholder=t('输入注册密码占位');
+  document.getElementById('跳转登录').textContent=t('跳转登录');
+  document.getElementById('注册按钮').textContent=t('注册按钮');
+  渲染用例说明栏();
+}
+
+function 切换表单(目标){
+  const 是登录=目标==='登录';
+  document.getElementById('登录表单').style.display=是登录?'flex':'none';
+  document.getElementById('注册表单').style.display=是登录?'none':'flex';
+  document.getElementById('tab登录').classList.toggle('激活',是登录);
+  document.getElementById('tab注册').classList.toggle('激活',!是登录);
+}
+
+function 切换语言(){
+  当前语言=当前语言==='zh'?'ru':'zh';localStorage.setItem('日程语言',当前语言);更新语言界面();
+}
+
+document.getElementById('语言按钮').addEventListener('click',切换语言);
+更新语言界面();
+
+// 注册功能
+document.getElementById('注册按钮').onclick = async function(){
+  const login = document.getElementById('输入用户名').value;
+  const password = document.getElementById('输入注册密码').value;
+  if(!login || !password){alert('请填用户名和密码！');return;}
+  try{
+    const res = await fetch('http://localhost:3000/api/auth/register',{
+      method:'POST',headers:{'Content-Type':'application/json'},credentials:'include',
+      body:JSON.stringify({login,password})
+    });
+    const data = await res.json();
+    if(data.success){
+      alert('注册成功！可以登录了');
+      切换表单('登录');
+    }else{
+      alert('注册失败：'+data.message);
+    }
+  }catch(e){
+    alert('网络错误，请确认后端已启动');
+  }
+};
+
+// 登录功能
+document.getElementById('登录按钮').onclick = async function(){
+  const login = document.getElementById('输入邮箱').value;
+  const password = document.getElementById('输入密码').value;
+  if(!login || !password){alert('请填用户名和密码！');return;}
+  try{
+    const res = await fetch('http://localhost:3000/api/auth/login',{
+      method:'POST',headers:{'Content-Type':'application/json'},credentials:'include',
+      body:JSON.stringify({login,password})
+    });
+    const data = await res.json();
+    if(data.success){
+      alert('登录成功！即将进入日程页面');
+      window.location.href='deepseek_html_20260424_e3ed24 (1).html';
+    }else{
+      alert('登录失败：'+data.message);
+    }
+  }catch(e){
+    alert('网络错误，请确认后端已启动');
+  }
+};
+</script>
+</body>
+</html>

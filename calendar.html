@@ -1,0 +1,931 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>日历备忘 / Календарь</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;600;700&family=ZCOOL+XiaoWei&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --墨色: #1a1a2e;
+    --深蓝: #16213e;
+    --中蓝: #0f3460;
+    --金色: #e94560;
+    --浅金: #f5a623;
+    --纸白: #fdf6e3;
+    --淡米: #f0e6cc;
+    --文字: #2c2c2c;
+    --浅灰: #888;
+    --格线: rgba(233, 69, 96, 0.15);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Noto Serif SC', serif;
+    background: var(--纸白);
+    min-height: 100vh;
+    color: var(--文字);
+    overflow-x: hidden;
+  }
+
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: 
+      repeating-linear-gradient(0deg, transparent, transparent 29px, var(--格线) 29px, var(--格线) 30px),
+      repeating-linear-gradient(90deg, transparent, transparent 29px, var(--格线) 29px, var(--格线) 30px);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .应用容器 {
+    position: relative;
+    z-index: 1;
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 40px 20px;
+  }
+
+  .顶部区域 {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 40px;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+
+  .标题块 { display: flex; flex-direction: column; }
+
+  .主标题 {
+    font-family: 'ZCOOL XiaoWei', serif;
+    font-size: 48px;
+    color: var(--墨色);
+    letter-spacing: 4px;
+    line-height: 1;
+  }
+
+  .副标题 {
+    font-size: 12px;
+    color: var(--浅灰);
+    letter-spacing: 6px;
+    margin-top: 6px;
+    text-transform: uppercase;
+  }
+
+  .右侧控件 {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  /* ===== 语言切换按钮 ===== */
+  .语言按钮 {
+    padding: 6px 14px;
+    border: 1px solid var(--墨色);
+    background: transparent;
+    color: var(--墨色);
+    font-family: 'Noto Serif SC', serif;
+    font-size: 12px;
+    letter-spacing: 1px;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .语言按钮:hover {
+    background: var(--墨色);
+    color: white;
+  }
+
+  .月份导航 {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+  }
+
+  .月份显示 {
+    font-family: 'ZCOOL XiaoWei', serif;
+    font-size: 28px;
+    color: var(--墨色);
+    min-width: 160px;
+    text-align: center;
+    letter-spacing: 2px;
+  }
+
+  .导航按钮 {
+    width: 44px;
+    height: 44px;
+    border: 2px solid var(--金色);
+    background: transparent;
+    color: var(--金色);
+    font-size: 20px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+    font-family: serif;
+  }
+
+  .导航按钮:hover {
+    background: var(--金色);
+    color: white;
+    transform: scale(1.05);
+  }
+
+  .日历主体 {
+    background: white;
+    border: 1px solid var(--淡米);
+    box-shadow: 8px 8px 0px var(--淡米), 16px 16px 0px rgba(233,69,96,0.08);
+  }
+
+  .星期头部 {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    border-bottom: 2px solid var(--墨色);
+  }
+
+  .星期格 {
+    padding: 14px 8px;
+    text-align: center;
+    font-size: 12px;
+    letter-spacing: 3px;
+    color: var(--浅灰);
+    border-right: 1px solid var(--淡米);
+  }
+
+  .星期格:last-child { border-right: none; }
+  .星期格:first-child, .星期格:last-child { color: var(--金色); }
+
+  .日历网格 {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+  }
+
+  .日期格子 {
+    aspect-ratio: 1;
+    border-right: 1px solid var(--淡米);
+    border-bottom: 1px solid var(--淡米);
+    padding: 10px;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    transition: background 0.15s;
+    overflow: hidden;
+    min-height: 90px;
+  }
+
+  .日期格子:nth-child(7n) { border-right: none; }
+
+  .日期格子:hover { background: rgba(233, 69, 96, 0.04); z-index: 1; }
+
+  .日期格子.其他月份 {
+    background: rgba(240,230,204,0.2);
+    opacity: 0.5;
+    cursor: default;
+  }
+
+  .日期格子.其他月份:hover { background: rgba(240,230,204,0.2); }
+
+  .日期格子.今天 { background: rgba(233, 69, 96, 0.06); }
+
+  .日期格子.今天 .日期数字 {
+    background: var(--金色);
+    color: white;
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+  }
+
+  .日期格子.周末 .日期数字 { color: var(--金色); }
+
+  .日期数字 {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--墨色);
+    line-height: 1;
+    margin-bottom: 6px;
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .备忘预览列表 {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    flex: 1;
+    overflow: hidden;
+  }
+
+  .备忘预览条 {
+    font-size: 10px;
+    line-height: 1.4;
+    color: var(--文字);
+    background: rgba(233, 69, 96, 0.08);
+    border-left: 2px solid var(--金色);
+    padding: 2px 4px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    border-radius: 0 2px 2px 0;
+    transition: all 0.2s;
+  }
+
+  /* ✅ 修复：日历格子内已完成事项显示划线 */
+  .备忘预览条.已完成 {
+    text-decoration: line-through;
+    color: var(--浅灰);
+    opacity: 0.6;
+    border-left-color: var(--浅灰);
+    background: rgba(136, 136, 136, 0.08);
+  }
+
+  .更多备忘 {
+    font-size: 9px;
+    color: var(--浅灰);
+    text-align: right;
+    margin-top: 1px;
+  }
+
+  .备忘角标 {
+    position: absolute;
+    top: 6px;
+    right: 6px;
+    width: 6px;
+    height: 6px;
+    background: var(--浅金);
+    border-radius: 50%;
+  }
+
+  .遮罩层 {
+    position: fixed;
+    inset: 0;
+    background: rgba(26, 26, 46, 0.7);
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    backdrop-filter: blur(4px);
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.3s;
+  }
+
+  .遮罩层.显示中 { opacity: 1; visibility: visible; }
+
+  .备忘录弹窗 {
+    background: var(--纸白);
+    width: 560px;
+    max-width: 95vw;
+    max-height: 90vh;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 20px 20px 0 rgba(233,69,96,0.15), 0 0 0 1px var(--淡米);
+    transform: translateY(30px) scale(0.96);
+    transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    overflow: hidden;
+  }
+
+  .遮罩层.显示中 .备忘录弹窗 { transform: translateY(0) scale(1); }
+
+  .弹窗标题栏 {
+    background: var(--墨色);
+    padding: 20px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+  }
+
+  .弹窗日期标题 {
+    font-family: 'ZCOOL XiaoWei', serif;
+    font-size: 24px;
+    color: white;
+    letter-spacing: 3px;
+  }
+
+  .弹窗日期标题 span {
+    color: var(--金色);
+    margin-left: 8px;
+    font-size: 14px;
+    letter-spacing: 1px;
+  }
+
+  .关闭按钮 {
+    width: 36px;
+    height: 36px;
+    border: 1px solid rgba(255,255,255,0.3);
+    background: transparent;
+    color: white;
+    font-size: 18px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+  }
+
+  .关闭按钮:hover { background: var(--金色); border-color: var(--金色); }
+
+  .备忘录内容区 {
+    flex: 1;
+    overflow-y: auto;
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .新建备忘区 {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    border: 1px solid var(--淡米);
+    padding: 16px;
+    background: white;
+  }
+
+  .备忘输入框 {
+    width: 100%;
+    border: none;
+    outline: none;
+    font-family: 'Noto Serif SC', serif;
+    font-size: 14px;
+    color: var(--文字);
+    resize: none;
+    line-height: 1.8;
+    background: transparent;
+    min-height: 80px;
+  }
+
+  .备忘输入框::placeholder { color: #ccc; }
+
+  .时间标签输入 {
+    border: none;
+    outline: none;
+    font-family: 'Noto Serif SC', serif;
+    font-size: 12px;
+    color: var(--浅灰);
+    background: transparent;
+    border-bottom: 1px dashed var(--淡米);
+    padding-bottom: 4px;
+    width: 200px;
+  }
+
+  .输入操作区 {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .添加按钮 {
+    padding: 8px 20px;
+    background: var(--金色);
+    color: white;
+    border: none;
+    font-family: 'Noto Serif SC', serif;
+    font-size: 13px;
+    cursor: pointer;
+    letter-spacing: 2px;
+    transition: all 0.2s;
+  }
+
+  .添加按钮:hover { background: var(--墨色); transform: translateX(2px); }
+
+  .备忘列表区 {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .备忘列表标题 {
+    font-size: 11px;
+    letter-spacing: 4px;
+    color: var(--浅灰);
+    border-bottom: 1px solid var(--淡米);
+    padding-bottom: 8px;
+  }
+
+  .备忘条目 {
+    display: flex;
+    gap: 12px;
+    padding: 14px;
+    background: white;
+    border: 1px solid var(--淡米);
+    border-left: 3px solid var(--金色);
+    position: relative;
+    animation: 条目出现 0.3s ease;
+    transition: all 0.2s;
+  }
+
+  .备忘条目:hover { border-left-color: var(--墨色); box-shadow: 4px 4px 0 var(--淡米); }
+
+  @keyframes 条目出现 {
+    from { opacity: 0; transform: translateX(-10px); }
+    to { opacity: 1; transform: translateX(0); }
+  }
+
+  .条目复选框 {
+    width: 18px;
+    height: 18px;
+    flex-shrink: 0;
+    accent-color: var(--金色);
+    margin-top: 2px;
+    cursor: pointer;
+  }
+
+  .条目内容 { flex: 1; min-width: 0; }
+
+  .条目文字 {
+    font-size: 14px;
+    line-height: 1.7;
+    color: var(--文字);
+    word-break: break-all;
+    white-space: pre-wrap;
+  }
+
+  .条目文字.已完成 { text-decoration: line-through; color: var(--浅灰); }
+
+  .条目时间 {
+    font-size: 11px;
+    color: var(--浅灰);
+    margin-top: 4px;
+    letter-spacing: 1px;
+  }
+
+  .删除条目按钮 {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    width: 24px;
+    height: 24px;
+    border: none;
+    background: transparent;
+    color: #ddd;
+    font-size: 14px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: color 0.2s;
+    opacity: 0;
+  }
+
+  .备忘条目:hover .删除条目按钮 { opacity: 1; }
+  .删除条目按钮:hover { color: var(--金色); }
+
+  .空状态 {
+    text-align: center;
+    padding: 40px 20px;
+    color: var(--浅灰);
+    font-size: 13px;
+    letter-spacing: 2px;
+  }
+
+  .空状态::before {
+    content: '✦';
+    display: block;
+    font-size: 24px;
+    margin-bottom: 10px;
+    color: var(--淡米);
+  }
+
+  .弹窗底部 {
+    padding: 12px 24px;
+    border-top: 1px solid var(--淡米);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: white;
+    flex-shrink: 0;
+  }
+
+  .统计文字 { font-size: 11px; color: var(--浅灰); letter-spacing: 1px; }
+
+  .清空按钮 {
+    font-size: 11px;
+    color: var(--浅灰);
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    letter-spacing: 1px;
+    padding: 4px 8px;
+    transition: color 0.2s;
+  }
+
+  .清空按钮:hover { color: var(--金色); }
+
+  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar-track { background: var(--淡米); }
+  ::-webkit-scrollbar-thumb { background: var(--浅灰); }
+
+  .今天按钮 {
+    padding: 8px 16px;
+    border: 1px solid var(--金色);
+    background: transparent;
+    color: var(--金色);
+    font-family: 'Noto Serif SC', serif;
+    font-size: 12px;
+    letter-spacing: 2px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .今天按钮:hover { background: var(--金色); color: white; }
+</style>
+</head>
+<body>
+
+<div class="应用容器">
+  <div class="顶部区域">
+    <div class="标题块">
+      <div class="主标题" id="主标题">日历备忘</div>
+      <div class="副标题" id="副标题">Calendar · Memo</div>
+    </div>
+    <div class="月份导航">
+      <button class="导航按钮" id="上月按钮">‹</button>
+      <div class="月份显示" id="月份显示"></div>
+      <button class="导航按钮" id="下月按钮">›</button>
+    </div>
+    <div class="右侧控件">
+      <button class="语言按钮" id="语言按钮">
+        <span>🌐</span>
+        <span id="语言文字">Рус</span>
+      </button>
+      <button class="今天按钮" id="今天按钮">今天</button>
+    </div>
+  </div>
+
+  <div class="日历主体">
+    <div class="星期头部" id="星期头部">
+      <div class="星期格">日</div>
+      <div class="星期格">一</div>
+      <div class="星期格">二</div>
+      <div class="星期格">三</div>
+      <div class="星期格">四</div>
+      <div class="星期格">五</div>
+      <div class="星期格">六</div>
+    </div>
+    <div class="日历网格" id="日历网格"></div>
+  </div>
+</div>
+
+<div class="遮罩层" id="遮罩层">
+  <div class="备忘录弹窗">
+    <div class="弹窗标题栏">
+      <div class="弹窗日期标题" id="弹窗标题"></div>
+      <button class="关闭按钮" id="关闭按钮">✕</button>
+    </div>
+    <div class="备忘录内容区">
+      <div class="新建备忘区">
+        <input class="时间标签输入" id="时间输入" type="text" maxlength="10">
+        <textarea class="备忘输入框" id="备忘输入" rows="3"></textarea>
+        <div class="输入操作区">
+          <span id="快捷提示" style="font-size:11px;color:#ccc;letter-spacing:1px"></span>
+          <button class="添加按钮" id="添加按钮"></button>
+        </div>
+      </div>
+      <div class="备忘列表区">
+        <div class="备忘列表标题" id="已记录标题"></div>
+        <div id="备忘列表容器"></div>
+      </div>
+    </div>
+    <div class="弹窗底部">
+      <span class="统计文字" id="统计文字"></span>
+      <button class="清空按钮" id="清空按钮"></button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ===== 翻译数据 =====
+const 翻译 = {
+  zh: {
+    主标题: '日历备忘',
+    副标题: 'Calendar · Memo',
+    语言切换: 'Рус',
+    今天: '今天',
+    星期头: ['日', '一', '二', '三', '四', '五', '六'],
+    星期名: ['周日', '周一', '周二', '周三', '周四', '周五', '周六'],
+    月份格式: (y, m) => `${y}年 ${m}月`,
+    日期格式: (y, m, d, w) => `${y}年${m}月${d}日 <span>${w}</span>`,
+    时间占位符: '时间（如 09:00）',
+    备忘占位符: '在这里写下今天的备忘...',
+    快捷提示: '按 Ctrl+Enter 快速添加',
+    添加按钮: '添加备忘',
+    已记录标题: '已记录事项',
+    清空按钮: '清空当日备忘',
+    暂无记录: '暂无记录',
+    空状态1: '尚无备忘',
+    空状态2: '写下今日所思所记',
+    统计: (n, c) => `共 ${n} 条，已完成 ${c} 条`,
+    清空确认: '确定要清空当日所有备忘吗？',
+    更多: (n) => `+${n} 条`,
+  },
+  ru: {
+    主标题: 'Календарь',
+    副标题: 'Заметки · Memo',
+    语言切换: '中文',
+    今天: 'Сегодня',
+    星期头: ['Вс', 'Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб'],
+    星期名: ['Вс', 'Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб'],
+    月份格式: (y, m) => {
+      const месяцы = ['Январь','Февраль','Март','Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'];
+      return `${месяцы[m-1]} ${y}`;
+    },
+    日期格式: (y, m, d, w) => {
+      const мес = ['января','февраля','марта','апреля','мая','июня','июля','августа','сентября','октября','ноября','декабря'];
+      return `${d} ${мес[m-1]} ${y} <span>${w}</span>`;
+    },
+    时间占位符: 'Время (напр. 09:00)',
+    备忘占位符: 'Напишите заметку на этот день...',
+    快捷提示: 'Ctrl+Enter — быстрое добавление',
+    添加按钮: 'Добавить',
+    已记录标题: 'Записи',
+    清空按钮: 'Очистить день',
+    暂无记录: 'Нет записей',
+    空状态1: 'Нет заметок',
+    空状态2: 'Запишите свои мысли',
+    统计: (n, c) => `Всего: ${n}, выполнено: ${c}`,
+    清空确认: 'Удалить все заметки за этот день?',
+    更多: (n) => `+${n}`,
+  }
+};
+
+let 当前语言 = localStorage.getItem('日历语言') || 'zh';
+function t(k) { return 翻译[当前语言][k]; }
+
+let 备忘数据 = JSON.parse(localStorage.getItem('日历备忘数据') || '{}');
+let 当前年月 = { 年: new Date().getFullYear(), 月: new Date().getMonth() + 1 };
+let 当前选中日期 = null;
+
+function 保存数据() {
+  localStorage.setItem('日历备忘数据', JSON.stringify(备忘数据));
+}
+
+function 获取日期键(y, m, d) {
+  return `${y}-${String(m).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+}
+
+function 更新语言界面() {
+  document.getElementById('主标题').textContent = t('主标题');
+  document.getElementById('副标题').textContent = t('副标题');
+  document.getElementById('语言文字').textContent = t('语言切换');
+  document.getElementById('今天按钮').textContent = t('今天');
+  document.getElementById('时间输入').placeholder = t('时间占位符');
+  document.getElementById('备忘输入').placeholder = t('备忘占位符');
+  document.getElementById('快捷提示').textContent = t('快捷提示');
+  document.getElementById('添加按钮').textContent = t('添加按钮');
+  document.getElementById('已记录标题').textContent = t('已记录标题');
+  document.getElementById('清空按钮').textContent = t('清空按钮');
+
+  const 格列表 = document.querySelectorAll('.星期格');
+  t('星期头').forEach((n, i) => { 格列表[i].textContent = n; });
+}
+
+function 渲染日历() {
+  const { 年, 月 } = 当前年月;
+  const 今天 = new Date();
+
+  document.getElementById('月份显示').textContent = t('月份格式')(年, 月);
+
+  const 本月第一天 = new Date(年, 月 - 1, 1);
+  const 本月天数 = new Date(年, 月, 0).getDate();
+  const 首日星期 = 本月第一天.getDay();
+  const 上月天数 = new Date(年, 月 - 1, 0).getDate();
+  const 网格 = document.getElementById('日历网格');
+  网格.innerHTML = '';
+
+  const 总格数 = Math.ceil((首日星期 + 本月天数) / 7) * 7;
+
+  for (let i = 0; i < 总格数; i++) {
+    const 格子 = document.createElement('div');
+    格子.className = '日期格子';
+
+    let 是本月 = true;
+    let 显示年 = 年, 显示月 = 月, 显示日;
+
+    if (i < 首日星期) {
+      显示日 = 上月天数 - 首日星期 + i + 1;
+      显示月 = 月 - 1 || 12;
+      显示年 = 月 === 1 ? 年 - 1 : 年;
+      是本月 = false;
+      格子.classList.add('其他月份');
+    } else if (i >= 首日星期 + 本月天数) {
+      显示日 = i - 首日星期 - 本月天数 + 1;
+      显示月 = 月 % 12 + 1;
+      显示年 = 月 === 12 ? 年 + 1 : 年;
+      是本月 = false;
+      格子.classList.add('其他月份');
+    } else {
+      显示日 = i - 首日星期 + 1;
+    }
+
+    const 星期几 = i % 7;
+    if ((星期几 === 0 || 星期几 === 6) && 是本月) 格子.classList.add('周末');
+
+    if (是本月 && 显示年 === 今天.getFullYear() && 显示月 === 今天.getMonth() + 1 && 显示日 === 今天.getDate()) {
+      格子.classList.add('今天');
+    }
+
+    const 数字元素 = document.createElement('div');
+    数字元素.className = '日期数字';
+    数字元素.textContent = 显示日;
+    格子.appendChild(数字元素);
+
+    const 日期键 = 获取日期键(显示年, 显示月, 显示日);
+    const 该日备忘 = 备忘数据[日期键] || [];
+
+    if (该日备忘.length > 0) {
+      const 角标 = document.createElement('div');
+      角标.className = '备忘角标';
+      格子.appendChild(角标);
+
+      const 预览列表 = document.createElement('div');
+      预览列表.className = '备忘预览列表';
+
+      const 显示数 = Math.min(该日备忘.length, 2);
+      for (let j = 0; j < 显示数; j++) {
+        const 条 = document.createElement('div');
+        // ✅ 修复：已完成事项在日历格子中也显示划线样式
+        条.className = '备忘预览条' + (该日备忘[j].已完成 ? ' 已完成' : '');
+        条.textContent = (该日备忘[j].时间标签 ? `${该日备忘[j].时间标签} ` : '') + 该日备忘[j].文字;
+        预览列表.appendChild(条);
+      }
+
+      if (该日备忘.length > 2) {
+        const 更多 = document.createElement('div');
+        更多.className = '更多备忘';
+        更多.textContent = t('更多')(该日备忘.length - 2);
+        预览列表.appendChild(更多);
+      }
+
+      格子.appendChild(预览列表);
+    }
+
+    if (是本月) {
+      格子.addEventListener('click', () => 打开备忘录(显示年, 显示月, 显示日));
+    }
+
+    网格.appendChild(格子);
+  }
+}
+
+function 打开备忘录(年, 月, 日) {
+  当前选中日期 = 获取日期键(年, 月, 日);
+  const 星期 = t('星期名')[new Date(年, 月 - 1, 日).getDay()];
+  document.getElementById('弹窗标题').innerHTML = t('日期格式')(年, 月, 日, 星期);
+  document.getElementById('备忘输入').value = '';
+  document.getElementById('时间输入').value = '';
+  渲染备忘列表();
+  document.getElementById('遮罩层').classList.add('显示中');
+  setTimeout(() => document.getElementById('备忘输入').focus(), 300);
+}
+
+function 渲染备忘列表() {
+  const 容器 = document.getElementById('备忘列表容器');
+  const 备忘列表 = 备忘数据[当前选中日期] || [];
+
+  if (备忘列表.length === 0) {
+    容器.innerHTML = `<div class="空状态">${t('空状态1')}<br>${t('空状态2')}</div>`;
+  } else {
+    容器.innerHTML = '';
+    备忘列表.forEach((项, 索引) => {
+      const 条目 = document.createElement('div');
+      条目.className = '备忘条目';
+      条目.innerHTML = `
+        <input type="checkbox" class="条目复选框" ${项.已完成 ? 'checked' : ''}>
+        <div class="条目内容">
+          <div class="条目文字 ${项.已完成 ? '已完成' : ''}">${项.文字}</div>
+          ${项.时间标签 ? `<div class="条目时间">⏰ ${项.时间标签}</div>` : ''}
+        </div>
+        <button class="删除条目按钮" title="删除">✕</button>
+      `;
+
+      条目.querySelector('.条目复选框').addEventListener('change', (e) => {
+        备忘数据[当前选中日期][索引].已完成 = e.target.checked;
+        保存数据();
+        渲染备忘列表();
+        渲染日历();
+      });
+
+      条目.querySelector('.删除条目按钮').addEventListener('click', () => {
+        备忘数据[当前选中日期].splice(索引, 1);
+        if (备忘数据[当前选中日期].length === 0) delete 备忘数据[当前选中日期];
+        保存数据();
+        渲染备忘列表();
+        渲染日历();
+        更新统计();
+      });
+
+      容器.appendChild(条目);
+    });
+  }
+
+  更新统计();
+}
+
+function 更新统计() {
+  const 备忘列表 = 备忘数据[当前选中日期] || [];
+  const 已完成数 = 备忘列表.filter(x => x.已完成).length;
+  const el = document.getElementById('统计文字');
+  el.textContent = 备忘列表.length === 0 ? t('暂无记录') : t('统计')(备忘列表.length, 已完成数);
+}
+
+function 添加备忘() {
+  const 输入框 = document.getElementById('备忘输入');
+  const 时间框 = document.getElementById('时间输入');
+  const 文字 = 输入框.value.trim();
+  const 时间 = 时间框.value.trim();
+
+  if (!文字) {
+    输入框.focus();
+    输入框.style.borderBottom = '1px solid var(--金色)';
+    setTimeout(() => 输入框.style.borderBottom = '', 1000);
+    return;
+  }
+
+  if (!备忘数据[当前选中日期]) 备忘数据[当前选中日期] = [];
+
+  备忘数据[当前选中日期].push({
+    id: Date.now(),
+    文字,
+    时间标签: 时间,
+    已完成: false,
+    创建时间: new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' })
+  });
+
+  保存数据();
+  渲染备忘列表();
+  渲染日历();
+  输入框.value = '';
+  时间框.value = '';
+  输入框.focus();
+}
+
+function 关闭弹窗() {
+  document.getElementById('遮罩层').classList.remove('显示中');
+  当前选中日期 = null;
+}
+
+function 切换语言() {
+  当前语言 = 当前语言 === 'zh' ? 'ru' : 'zh';
+  localStorage.setItem('日历语言', 当前语言);
+  更新语言界面();
+  渲染日历();
+  if (当前选中日期) 渲染备忘列表();
+}
+
+// ===== 事件绑定 =====
+document.getElementById('上月按钮').addEventListener('click', () => {
+  if (当前年月.月 === 1) { 当前年月.年--; 当前年月.月 = 12; } else { 当前年月.月--; }
+  渲染日历();
+});
+
+document.getElementById('下月按钮').addEventListener('click', () => {
+  if (当前年月.月 === 12) { 当前年月.年++; 当前年月.月 = 1; } else { 当前年月.月++; }
+  渲染日历();
+});
+
+document.getElementById('今天按钮').addEventListener('click', () => {
+  const 今天 = new Date();
+  当前年月 = { 年: 今天.getFullYear(), 月: 今天.getMonth() + 1 };
+  渲染日历();
+});
+
+document.getElementById('语言按钮').addEventListener('click', 切换语言);
+document.getElementById('添加按钮').addEventListener('click', 添加备忘);
+document.getElementById('备忘输入').addEventListener('keydown', (e) => { if (e.ctrlKey && e.key === 'Enter') 添加备忘(); });
+document.getElementById('关闭按钮').addEventListener('click', 关闭弹窗);
+document.getElementById('遮罩层').addEventListener('click', (e) => { if (e.target === document.getElementById('遮罩层')) 关闭弹窗(); });
+
+document.getElementById('清空按钮').addEventListener('click', () => {
+  if (!当前选中日期 || !备忘数据[当前选中日期] || 备忘数据[当前选中日期].length === 0) return;
+  if (confirm(t('清空确认'))) {
+    delete 备忘数据[当前选中日期];
+    保存数据();
+    渲染备忘列表();
+    渲染日历();
+  }
+});
+
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape') 关闭弹窗(); });
+
+// ===== 初始化 =====
+更新语言界面();
+渲染日历();
+</script>
+</body>
+</html>
